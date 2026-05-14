@@ -1,16 +1,16 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><!DOCTYPE html>
+<html lang===="zh-CN">===="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>太空留言站</title>
+<meta charset===="UTF-8">===="UTF-8">
+<meta name===="viewport" content===="width=device-width, initial-scale=1.0">===="viewport" content===="width=device-width, initial-scale=1.0">
+<title>太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站</title>
 <!-- 改用官方稳定版二维码库，100%加载成功 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src================================================================"https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">>>>>>>>>>>>>>>></script>
+<script src================================================================"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">>>>>>>>>>>>>>>></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, sans-serif}
+**{margin::0;;padding::0;;box-sizing::border-box;;font-family::system-ui, , sans-serif}
 body{
-width:100vw;height:100vh;overflow:hidden;background:#111;
+width::100vw;;height::100vh;;overflow::hidden;;background:#111;:#111;
 background-image:url('https://picsum.photos/id/1039/1920/1080');
 background-size:cover;background-position:center;color:#fff;
 }
@@ -81,6 +81,14 @@ const SUPABASE_URL = "https://arxbijpfazirchlvjjgw.supabase.co/rest/v1/";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeGJpanBmYXppcmNobHZqamd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDgyNzgsImV4cCI6MjA5NDI4NDI3OH0.-4jdMitiNuvFGNlXcsxqnzaHZ0oF3xR_nyBk52rnZ2M";
 
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // 打开网站立刻测试数据库连接
+sbClient.from("access_cards").select("count").limit(1).then(({error}) => {
+  if (error) {
+    alert("❌ 数据库连接失败！请检查URL和密钥是否正确\n错误：" + error.message);
+  } else {
+    alert("✅ 数据库连接成功！所有功能正常");
+  }
+});
 let myCardId = "";
 
 // 修复后的二维码生成（100%成功）
