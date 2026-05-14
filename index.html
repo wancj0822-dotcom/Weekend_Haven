@@ -6,7 +6,6 @@
 <title>周末收留所</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 :root {
   --base-font: 16px;
@@ -30,10 +29,11 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('bg.jpg') center/cover no-repeat;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), url('bg.jpg') center/cover no-repeat;
   color: #fff;
 }
 
+/* 漂浮留言 */
 .particle {
   position: absolute;
   padding: 6px 12px;
@@ -50,6 +50,7 @@ body {
   text-overflow: ellipsis;
 }
 
+/* 入口面板 */
 .entry-panel {
   position: fixed;
   top: 50%;
@@ -60,20 +61,17 @@ body {
   max-width: var(--panel-max-width);
   z-index: 10;
 }
-
 .entry-panel h1 {
   font-size: 2.2rem;
   margin-bottom: 20px;
   text-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
   letter-spacing: 2px;
 }
-
 .entry-panel p {
   font-size: 1rem;
   margin-bottom: 30px;
   opacity: 0.8;
 }
-
 .entry-panel input {
   width: 100%;
   padding: 16px;
@@ -87,7 +85,6 @@ body {
   backdrop-filter: blur(10px);
   outline: none;
 }
-
 .main-btn {
   width: 100%;
   padding: 16px 36px;
@@ -100,14 +97,13 @@ body {
   backdrop-filter: blur(10px);
   transition: 0.3s;
   font-weight: bold;
-  letter-spacing: 1px;
 }
-
 .main-btn:hover {
   background: rgba(255, 255, 255, 0.25);
   transform: scale(1.02);
 }
 
+/* 通用弹窗 */
 .panel {
   display: none;
   position: fixed;
@@ -120,55 +116,69 @@ body {
   padding: 20px;
 }
 
+/* 卡片容器 */
 .card-container {
   max-width: var(--card-max-width);
   margin: 10vh auto;
   text-align: center;
 }
 
+/* 高级美化门禁卡（核心） */
 .card {
   width: 100%;
-  height: 220px;
-  border-radius: 20px;
-  padding: 20px;
+  height: 240px;
+  border-radius: 24px;
+  padding: 30px 25px;
   margin: 0 auto 30px;
   position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(255,255,255,0.1);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   transition: background 0.5s ease;
+  overflow: hidden;
 }
-
-.card-nickname {
+/* 卡片流光特效 */
+.card::before {
+  content: '';
   position: absolute;
-  top: 20px;
-  left: 20px;
-  font-size: 1.3rem;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.08), transparent);
+  animation: shine 6s infinite linear;
+}
+@keyframes shine {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+.card-nickname {
+  position: relative;
+  font-size: 1.1rem;
   font-weight: bold;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  margin-bottom: 8px;
 }
-
-.card-qrcode {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100px;
-  height: 100px;
-  background: #fff;
-  padding: 5px;
-  border-radius: 8px;
-}
-
-.card-code {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  font-size: 0.9rem;
+.card-subtitle {
+  position: relative;
+  font-size: 0.75rem;
   opacity: 0.9;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  letter-spacing: 1px;
+}
+.card-code {
+  position: absolute;
+  bottom: 25px;
+  right: 25px;
+  font-size: 0.85rem;
+  opacity: 0.9;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 2;
 }
 
+/* 卡片按钮 */
 .card-buttons {
   display: flex;
   flex-direction: column;
@@ -176,7 +186,6 @@ body {
   width: 100%;
   margin: 0 auto;
 }
-
 .card-btn {
   padding: 14px;
   border-radius: 50px;
@@ -187,138 +196,138 @@ body {
   cursor: pointer;
   backdrop-filter: blur(10px);
   transition: 0.3s;
+  z-index: 2;
 }
-
 .card-btn:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
-.card-btn.secondary {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.msg-card {
-  background: rgba(20, 20, 30, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+/* 分享二维码弹窗 */
+.share-modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(20,20,30,0.95);
+  padding: 30px;
   border-radius: 20px;
-  padding: 30px 20px;
-  max-width: var(--panel-max-width);
-  margin: 10vh auto;
   text-align: center;
-  backdrop-filter: blur(20px);
-}
-
-.msg-card h2 {
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-}
-
-.msg-card textarea {
-  height: 120px;
-  resize: none;
-}
-
-.msg-card input, .msg-card textarea, .msg-card button {
-  width: 100%;
-  padding: 14px;
-  margin: 8px 0;
-  border-radius: 12px;
-  border: none;
-  font-size: 1rem;
-  background: rgba(255,255,255,0.1);
-  color: #fff;
+  z-index: 2000;
   border: 1px solid rgba(255,255,255,0.2);
-  outline: none;
-}
-
-.msg-card button {
-  background: rgba(255,255,255,0.2);
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.msg-card button:hover {
-  background: rgba(255,255,255,0.3);
-}
-
-.wall-card {
-  background: rgba(20, 20, 30, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-  padding: 30px 20px;
-  max-width: var(--panel-max-width);
-  max-height: 80vh;
-  margin: 10vh auto;
   backdrop-filter: blur(20px);
-  overflow-y: auto;
 }
-
-.wall-card h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-}
-
-.message-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+.share-modal h3 {
+  font-size: 1.2rem;
   margin-bottom: 20px;
 }
-
-.message-item {
-  background: rgba(255,255,255,0.05);
-  padding: 15px;
+#shareQrcode {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 20px;
+  background: #fff;
+  padding: 10px;
   border-radius: 12px;
-  border-left: 3px solid rgba(255,255,255,0.3);
 }
-
-.message-nickname {
-  font-weight: bold;
-  font-size: 1.1rem;
-  margin-bottom: 5px;
-}
-
-.message-content {
-  font-size: 1rem;
-  opacity: 0.9;
-  margin-bottom: 8px;
-  line-height: 1.5;
-}
-
-.message-time {
-  font-size: 0.8rem;
-  opacity: 0.6;
-  text-align: right;
-}
-
-.close-btn {
-  width: 100%;
-  padding: 14px;
+.close-share {
+  padding: 10px 20px;
   border-radius: 50px;
   border: 1px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.15);
   color: #fff;
-  font-size: 1rem;
   cursor: pointer;
-  backdrop-filter: blur(10px);
+}
+
+/* 住户留言墙（上评论+下输入） */
+.message-wall {
+  max-width: var(--panel-max-width);
+  margin: 5vh auto;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.message-list {
+  flex: 1;
+  background: rgba(20,20,30,0.9);
+  border-radius: 16px;
+  padding: 20px;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(20px);
+}
+.message-item {
+  background: rgba(255,255,255,0.05);
+  padding: 12px 15px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border-left: 3px solid rgba(255,255,255,0.3);
+}
+.message-nickname {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+.message-content {
+  font-size: 0.95rem;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+.message-time {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  text-align: right;
+  margin-top: 6px;
+}
+.message-input-area {
+  background: rgba(20,20,30,0.9);
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(20px);
+}
+.message-input-area textarea {
+  width: 100%;
+  height: 100px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  resize: none;
+  margin-bottom: 12px;
+  outline: none;
+}
+.message-input-area button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  cursor: pointer;
   transition: 0.3s;
 }
-
-.close-btn:hover {
+.message-input-area button:hover {
   background: rgba(255,255,255,0.25);
 }
-
-#lotteryResult {
-  margin-top: 10px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #ffd700;
+.back-btn {
+  padding: 12px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  cursor: pointer;
 }
+
+/* 滚动条美化 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
 </style>
 </head>
 <body>
+
+<!-- 1. 入口界面 -->
 <div class="entry-panel">
   <h1>周末收留所</h1>
   <p>输入你的昵称，领取专属门禁卡</p>
@@ -326,54 +335,56 @@ body {
   <button class="main-btn" onclick="generateCard()">领取门禁卡</button>
 </div>
 
+<!-- 2. 门禁卡弹窗 -->
 <div class="panel" id="cardModal">
   <div class="card-container">
     <div class="card" id="accessCard">
       <div class="card-nickname" id="cardNickname"></div>
-      <div class="card-qrcode" id="qrcode"></div>
+      <div class="card-subtitle">住户·限定开放日</div>
       <div class="card-code" id="cardCode"></div>
     </div>
     <div class="card-buttons">
-      <button class="card-btn" onclick="shareCard()">分享给朋友</button>
+      <button class="card-btn" onclick="openShareModal()">分享给朋友</button>
       <button class="card-btn" onclick="regenerateCard()">重新领取</button>
-      <button class="card-btn secondary" onclick="openMessagePanel()">进入留言&抽奖</button>
+      <button class="card-btn" onclick="openMessageWall()">住户留言墙</button>
     </div>
   </div>
 </div>
 
-<div class="panel" id="msgPanel">
-  <div class="msg-card">
-    <h2>留言 & 抽奖</h2>
-    <textarea id="userMsg" placeholder="写下你想说的话"></textarea>
-    <button onclick="submitMessage()">提交留言（审核后显示）</button>
-    <br><br>
-    <input id="lotteryCodeInput" placeholder="输入抽奖码">
-    <button onclick="startLottery()">立即抽奖</button>
-    <p id="lotteryResult"></p>
-    <br>
-    <button onclick="getMyLotteryCode()">领取抽奖码</button>
-    <button onclick="openMessageWall()">住户留言墙</button>
-    <button onclick="closeAllModal()">返回主页</button>
-  </div>
+<!-- 3. 分享二维码弹窗 -->
+<div class="share-modal" id="shareModal">
+  <h3>扫码进入收留所</h3>
+  <div id="shareQrcode"></div>
+  <button class="close-share" onclick="closeShareModal()">关闭</button>
 </div>
 
+<!-- 4. 住户留言墙弹窗 -->
 <div class="panel" id="messageWallPanel">
-  <div class="wall-card">
-    <h2>住户留言墙</h2>
+  <div class="message-wall">
+    <button class="back-btn" onclick="closeMessageWall()">返回卡片</button>
     <div class="message-list" id="messageList"></div>
-    <button class="close-btn" onclick="closeMessageWall()">返回</button>
+    <div class="message-input-area">
+      <textarea id="userMsg" placeholder="写下你想说的话..."></textarea>
+      <button onclick="submitMessage()">提交留言（审核后展示）</button>
+    </div>
   </div>
 </div>
 
 <script>
+// Supabase 配置
 const SUPABASE_URL = "https://arxbijpfazirchlvjjgw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeGJpanBmYXppcmNobHZqamd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDgyNzgsImV4cCI6MjA5NDI4NDI3OH0.-4jdMitiNuvFGNlXcsxqnzaHZ0oF3xR_nyBk52rnZ2M";
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// 全局变量
 let currentNickname = "";
 let currentCardId = "";
+let fixedGradientIndex = 0; // 昵称绑定固定渐变
 window.allMessages = [];
+// 你的网站网址（Vercel 地址，扫码访问）
+const WEBSITE_URL = window.location.href;
 
+// 高级渐变配色
 const gradients = [
   "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
@@ -387,128 +398,117 @@ const gradients = [
 
 window.onload = loadApprovedMessages;
 
-function getRandomGradient() {
-  return gradients[Math.floor(Math.random() * gradients.length)];
+// 根据昵称生成固定渐变（同一昵称永远同色）
+function getFixedGradientByNickname(nickname) {
+  let hash = 0;
+  for (let i = 0; i < nickname.length; i++) {
+    hash = nickname.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  fixedGradientIndex = Math.abs(hash) % gradients.length;
+  return gradients[fixedGradientIndex];
 }
 
+// 重新领取（随机更换渐变）
+function regenerateCard() {
+  fixedGradientIndex = Math.floor(Math.random() * gradients.length);
+  document.getElementById("accessCard").style.background = gradients[fixedGradientIndex];
+}
+
+// 生成门禁卡
 async function generateCard() {
   const nickname = document.getElementById("nicknameInput").value.trim();
   if (!nickname) {
     alert("请输入你的昵称");
     return;
   }
-  
   currentNickname = nickname;
   currentCardId = Math.random().toString(36).substring(2, 12);
-  
+
+  // 隐藏入口，显示卡片
   document.querySelector(".entry-panel").style.display = "none";
   document.getElementById("cardModal").style.display = "block";
+  
+  // 赋值卡片信息
   document.getElementById("cardNickname").innerText = nickname;
   document.getElementById("cardCode").innerText = "编号：" + currentCardId;
-  document.getElementById("accessCard").style.background = getRandomGradient();
-  
-  document.getElementById("qrcode").innerHTML = "";
-  new QRCode(document.getElementById("qrcode"), {
-    text: currentCardId, width: 100, height: 100
-  });
-  
+  // 固定渐变（昵称绑定）
+  document.getElementById("accessCard").style.background = getFixedGradientByNickname(nickname);
+
+  // 保存到数据库
   try {
     await sbClient.from("access_cards").insert([{ qr_code: currentCardId, nickname: nickname }]);
-  } catch(e) { console.log(e); }
+  } catch (e) { console.log(e); }
 }
 
-function regenerateCard() {
-  document.getElementById("accessCard").style.background = getRandomGradient();
+// 打开分享弹窗（显示二维码）
+function openShareModal() {
+  document.getElementById("shareModal").style.display = "block";
+  // 生成二维码（内容为网站网址）
+  document.getElementById("shareQrcode").innerHTML = "";
+  new QRCode(document.getElementById("shareQrcode"), {
+    text: WEBSITE_URL,
+    width: 160,
+    height: 160
+  });
+}
+// 关闭分享弹窗
+function closeShareModal() {
+  document.getElementById("shareModal").style.display = "none";
 }
 
-async function shareCard() {
-  const card = document.getElementById("accessCard");
-  try {
-    const canvas = await html2canvas(card, { backgroundColor: null, scale: 2 });
-    const link = document.createElement("a");
-    link.download = `门禁卡-${currentNickname}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-    alert("卡片已保存到相册！");
-  } catch(e) { alert("分享失败"); }
-}
-
-function openMessagePanel() {
-  document.getElementById("cardModal").style.display = "none";
-  document.getElementById("msgPanel").style.display = "block";
-}
-
+// 打开留言墙
 function openMessageWall() {
-  document.getElementById("msgPanel").style.display = "none";
+  document.getElementById("cardModal").style.display = "none";
   document.getElementById("messageWallPanel").style.display = "block";
-  
-  const list = document.getElementById("messageList");
-  list.innerHTML = "";
-  
-  if (window.allMessages.length > 0) {
-    window.allMessages.forEach(m => {
-      const time = new Date(m.created_at).toLocaleString("zh-CN");
-      const name = m.nickname || "匿名";
-      item.innerHTML = `
-        <div class="message-nickname">${name}</div>
-        <div class="message-content">${m.content}</div>
-        <div class="message-time">${time}</div>
-      `;
-      list.appendChild(item);
-    });
-  } else {
-    list.innerHTML = "<p style='text-align:center;opacity:0.6;'>暂无留言</p>";
-  }
+  renderMessageList();
 }
-
+// 关闭留言墙
 function closeMessageWall() {
   document.getElementById("messageWallPanel").style.display = "none";
-  document.getElementById("msgPanel").style.display = "block";
+  document.getElementById("cardModal").style.display = "block";
 }
 
-function closeAllModal() {
-  document.getElementById("cardModal").style.display = "none";
-  document.getElementById("msgPanel").style.display = "none";
-  document.getElementById("messageWallPanel").style.display = "none";
-  document.querySelector(".entry-panel").style.display = "block";
-  loadApprovedMessages();
+// 渲染留言列表
+function renderMessageList() {
+  const list = document.getElementById("messageList");
+  list.innerHTML = "";
+  if (window.allMessages.length === 0) {
+    list.innerHTML = "<p style='text-align:center;opacity:0.6;'>暂无留言，快来抢沙发吧</p>";
+    return;
+  }
+  window.allMessages.forEach(m => {
+    const time = new Date(m.created_at).toLocaleString("zh-CN");
+    const name = m.nickname || "匿名";
+    const item = document.createElement("div");
+    item.className = "message-item";
+    item.innerHTML = `
+      <div class="message-nickname">${name}</div>
+      <div class="message-content">${m.content}</div>
+      <div class="message-time">${time}</div>
+    `;
+    list.appendChild(item);
+  });
 }
 
+// 提交留言
 async function submitMessage() {
   const content = document.getElementById("userMsg").value.trim();
-  if (!content) return alert("请输入内容");
+  if (!content) return alert("请输入留言内容");
   
   try {
     await sbClient.from("messages").insert([{
-      content: content, nickname: currentNickname, is_approved: false
+      content: content,
+      nickname: currentNickname,
+      is_approved: false
     }]);
-    alert("提交成功！");
+    alert("✅ 留言提交成功，审核后将展示在主页");
     document.getElementById("userMsg").value = "";
-  } catch(e) { alert("提交失败"); }
+  } catch (e) {
+    alert("❌ 提交失败，请重试");
+  }
 }
 
-async function getMyLotteryCode() {
-  try {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    await sbClient.from("lottery_codes").insert([{ code, is_used: false, nickname: currentNickname }]);
-    alert("抽奖码：" + code);
-  } catch(e) { alert("领取失败"); }
-}
-
-async function startLottery() {
-  const code = document.getElementById("lotteryCodeInput").value.trim();
-  if (!code) return alert("请输入抽奖码");
-  
-  const { data } = await sbClient.from("lottery_codes").select("*").eq("code", code);
-  if (!data?.length) return alert("无效码");
-  if (data[0].is_used) return alert("已使用");
-  
-  const prizes = ["一等奖","二等奖","三等奖","四等奖","五等奖","谢谢参与"];
-  const prize = prizes[Math.floor(Math.random() * prizes.length)];
-  await sbClient.from("lottery_codes").update({ is_used: true, prize }).eq("code", code);
-  document.getElementById("lotteryResult").innerText = "恭喜：" + prize;
-}
-
+// 加载审核通过的留言（漂浮）
 async function loadApprovedMessages() {
   document.querySelectorAll(".particle").forEach(p => p.remove());
   const { data } = await sbClient.from("messages").select("*").eq("is_approved", true);
@@ -521,17 +521,18 @@ async function loadApprovedMessages() {
   }
 }
 
+// 漂浮留言动画
 function createFloatParticle(text) {
   const div = document.createElement("div");
   div.className = "particle";
   div.innerText = text;
   document.body.appendChild(div);
-  
+
   let x = Math.random() * (innerWidth - div.offsetWidth);
   let y = Math.random() * (innerHeight - div.offsetHeight);
   let vx = (Math.random() - 0.5) * 0.8;
   let vy = (Math.random() - 0.5) * 0.8;
-  
+
   function animate() {
     x += vx; y += vy;
     if (x < 0 || x > innerWidth - div.offsetWidth) vx = -vx;
