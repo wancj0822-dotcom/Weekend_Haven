@@ -14,7 +14,7 @@
   font-family: system-ui, sans-serif;
 }
 
-/* 太空极简背景 —— 这里换背景图！*/
+/* 背景：直接替换url即可更换背景图 */
 body {
   width: 100vw;
   height: 100vh;
@@ -26,7 +26,7 @@ body {
   color: #fff;
 }
 
-/* 留言粒子样式：极简太空风 */
+/* 留言漂浮粒子样式 */
 .particle {
   position: absolute;
   padding: 6px 12px;
@@ -38,11 +38,10 @@ body {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  animation: float 8s infinite linear;
 }
 
-/* 按钮：极简悬浮按钮 */
-.btn {
+/* 底部主按钮：领取门禁卡 */
+.main-btn {
   position: fixed;
   bottom: 40px;
   left: 50%;
@@ -58,7 +57,7 @@ body {
   backdrop-filter: blur(10px);
   transition: 0.3s;
 }
-.btn:hover {
+.main-btn:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
@@ -116,102 +115,170 @@ button:hover {
 </head>
 
 <body>
-<button class="btn" onclick="openPanel()">进入留言</button>
+<!-- 主按钮：领取门禁卡 -->
+<button class="main-btn" onclick="generateCard()">领取门禁卡</button>
 
+<!-- 门禁卡弹窗 -->
+<div class="panel" id="cardModal">
+  <div class="card">
+    <h2>你的专属门禁卡</h2>
+    <div id="qrcode"></div>
+    <p id="cardCode"></p>
+    <br>
+    <button onclick="openMessagePanel()">进入留言&抽奖</button>
+    <button onclick="closeAllModal()">关闭</button>
+  </div>
+</div>
+
+<!-- 留言&抽奖弹窗 -->
 <div class="panel" id="msgPanel">
   <div class="card">
-    <h2>💬 留言</h2>
-    <textarea id="content" placeholder="写下你的留言..."></textarea>
-    <button onclick="sendMsg()">提交（需审核）</button>
+    <h2>留言 & 抽奖</h2>
+    <textarea id="userMsg" placeholder="写下你想说的话"></textarea>
+    <button onclick="submitMessage()">提交留言（审核后显示）</button>
+    <br><br>
+
+    <input id="lotteryCodeInput" placeholder="输入抽奖码">
+    <button onclick="startLottery()">立即抽奖</button>
+    <p id="lotteryResult"></p>
     <br>
-    <button onclick="closePanel()">关闭</button>
+    <button onclick="getMyLotteryCode()">领取抽奖码</button>
+    <button onclick="closeAllModal()">返回主页</button>
   </div>
 </div>
 
 <script>
 // ======================
-// 只改这两行！
+// 只修改下面2行你的Supabase信息！
 // ======================
 const SUPABASE_URL = "https://arxbijpfazirchlvjjgw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeGJpanBmYXppcmNobHZqamd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDgyNzgsImV4cCI6MjA5NDI4NDI3OH0.-4jdMitiNuvFGNlXcsxqnzaHZ0oF3xR_nyBk52rnZ2M";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 只创建1次客户端，修复重复声明报错
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let myCardId = "";
 
-// 页面加载 → 自动显示所有已审核留言
-window.onload = async function () {
-  loadAllApprovedMessages();
-};
+// 页面加载：自动加载已审核留言，生成漂浮粒子
+window.onload = loadApprovedMessages;
 
-// 加载所有通过审核的留言 → 生成漂浮粒子
-async function loadAllApprovedMessages() {
-  // 清空旧粒子
-  document.querySelectorAll(".particle").forEach(p => p.remove());
-
-  const { data } = await supabase
-    .from("messages")
-    .select("content")
-    .eq("is_approved", true);
-
-  if (!data) return;
-  
-  data.forEach(row => {
-    createFloatText(row.content);
-  });
+// 生成门禁卡+二维码
+async function generateCard() {
+  try {
+    myCardId = Math.random().toString(36).substring(2, 12);
+    document.getElementById("cardModal").style.display = "block";
+    document.getElementById("cardCode").innerText = "门禁码：" + myCardId;
+    
+    document.getElementById("qrcode").innerHTML = "";
+    new QRCode(document.getElementById("qrcode"), {
+      text: myCardId,
+      width: 180,
+      height: 180,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    
+    await sbClient.from("access_cards").insert([{qr_code: myCardId}]);
+  } catch (error) {
+    alert("错误：" + error.message);
+  }
 }
 
-// 创建随机漂浮粒子（核心）
-function createFloatText(text) {
-  const p = document.createElement("div");
-  p.className = "particle";
-  p.innerText = text;
-  document.body.appendChild(p);
+// 打开留言面板
+function openMessagePanel() {
+  document.getElementById("cardModal").style.display = "none";
+  document.getElementById("msgPanel").style.display = "block";
+}
 
-  // 随机位置
-  let x = Math.random() * window.innerWidth;
-  let y = Math.random() * window.innerHeight;
-
-  // 随机速度
-  let vx = (Math.random() - 0.5) * 1.2;
-  let vy = (Math.random() - 0.5) * 1.2;
-
-  p.style.left = x + "px";
-  p.style.top = y + "px";
-
-  function animate() {
-    x += vx;
-    y += vy;
-
-    // 碰到边界反弹
-    if (x < 0 || x > window.innerWidth) vx = -vx;
-    if (y < 0 || y > window.innerHeight) vy = -vy;
-
-    p.style.left = x + "px";
-    p.style.top = y + "px";
-    requestAnimationFrame(animate);
-  }
-  animate();
+// 关闭所有弹窗
+function closeAllModal() {
+  document.getElementById("cardModal").style.display = "none";
+  document.getElementById("msgPanel").style.display = "none";
+  loadApprovedMessages(); // 关闭时刷新漂浮留言
 }
 
 // 提交留言
-async function sendMsg() {
-  const content = document.getElementById("content").value.trim();
-  if (!content) return alert("请输入内容");
-
-  await supabase.from("messages").insert([{
+async function submitMessage() {
+  const content = document.getElementById("userMsg").value.trim();
+  if (!content) return alert("请输入留言内容");
+  await sbClient.from("messages").insert([{
     content: content,
+    type: "text",
     is_approved: false
   }]);
-
-  alert("提交成功！管理员审核后会显示");
-  document.getElementById("content").value = "";
+  alert("提交成功！管理员审核后将显示在主页");
+  document.getElementById("userMsg").value = "";
 }
 
-function openPanel() {
-  document.getElementById("msgPanel").style.display = "block";
+// 领取抽奖码
+async function getMyLotteryCode() {
+  try {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const { error } = await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
+    if (error) throw error;
+    alert("✅ 抽奖码领取成功！\n你的抽奖码是：" + code);
+  } catch (error) {
+    alert("❌ 领取失败：" + error.message);
+  }
 }
-function closePanel() {
-  document.getElementById("msgPanel").style.display = "none";
-  loadAllApprovedMessages(); // 关闭时刷新粒子
+
+// 抽奖
+async function startLottery() {
+  const code = document.getElementById("lotteryCodeInput").value.trim();
+  if (!code) return alert("请先领取抽奖码");
+  try {
+    const { data, error } = await sbClient.from("lottery_codes")
+      .select("*").eq("code", code).limit(1);
+    if (error) throw error;
+    if (data.length === 0) return alert("❌ 无效抽奖码");
+    if (data[0].is_used) return alert("❌ 已使用的抽奖码");
+    
+    const prizes = ["奖品A", "奖品B", "奖品C", "奖品D", "奖品E", "奖品F"];
+    const result = prizes[Math.floor(Math.random() * prizes.length)];
+    await sbClient.from("lottery_codes")
+      .update({is_used: true, prize: result})
+      .eq("code", code);
+    document.getElementById("lotteryResult").innerText = "🎉 恭喜获得：" + result;
+  } catch (error) {
+    alert("❌ 抽奖失败：" + error.message);
+  }
+}
+
+// 加载已审核留言 → 生成随机漂浮粒子（核心功能）
+async function loadApprovedMessages() {
+  // 清空旧粒子
+  document.querySelectorAll('.particle').forEach(p => p.remove());
+  
+  const { data } = await sbClient.from("messages")
+    .select("content").eq("is_approved", true);
+    
+  if (data) data.forEach(msg => createFloatParticle(msg.content));
+}
+
+// 创建无规则漂浮粒子
+function createFloatParticle(text) {
+  const div = document.createElement("div");
+  div.className = "particle";
+  div.innerText = text;
+  document.body.appendChild(div);
+  
+  let x = Math.random() * window.innerWidth;
+  let y = Math.random() * window.innerHeight;
+  let vx = (Math.random() - 0.5) * 0.8;
+  let vy = (Math.random() - 0.5) * 0.8;
+  
+  div.style.left = x + "px";
+  div.style.top = y + "px";
+  
+  function animate() {
+    x += vx; y += vy;
+    if (x < 0 || x > window.innerWidth) vx = -vx;
+    if (y < 0 || y > window.innerHeight) vy = -vy;
+    div.style.left = x + "px";
+    div.style.top = y + "px";
+    requestAnimationFrame(animate);
+  }
+  animate();
 }
 </script>
 </body>
