@@ -14,7 +14,6 @@
   font-family: system-ui, sans-serif;
 }
 
-/* 背景样式 - 已修复注释问题 */
 body {
   width: 100vw;
   height: 100vh;
@@ -23,7 +22,6 @@ body {
   color: #fff;
 }
 
-/* 留言漂浮粒子样式 */
 .particle {
   position: absolute;
   padding: 6px 12px;
@@ -37,7 +35,6 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* 底部主按钮：领取门禁卡 */
 .main-btn {
   position: fixed;
   bottom: 40px;
@@ -58,7 +55,6 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* 弹窗面板 */
 .panel {
   display: none;
   position: fixed;
@@ -112,10 +108,8 @@ button:hover {
 </head>
 
 <body>
-<!-- 主按钮：领取门禁卡 -->
 <button class="main-btn" onclick="generateCard()">领取门禁卡</button>
 
-<!-- 门禁卡弹窗 -->
 <div class="panel" id="cardModal">
   <div class="card">
     <h2>你的专属门禁卡</h2>
@@ -127,7 +121,6 @@ button:hover {
   </div>
 </div>
 
-<!-- 留言&抽奖弹窗 -->
 <div class="panel" id="msgPanel">
   <div class="card">
     <h2>留言 & 抽奖</h2>
@@ -145,20 +138,14 @@ button:hover {
 </div>
 
 <script>
-// ======================
-// 只修改下面2行你的Supabase信息！
-// ======================
 const SUPABASE_URL = "https://arxbijpfazirchlvjjgw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeGJpanBmYXppcmNobHZqamd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDgyNzgsImV4cCI6MjA5NDI4NDI3OH0.-4jdMitiNuvFGNlXcsxqnzaHZ0oF3xR_nyBk52rnZ2M";
 
-// 只创建1次客户端，修复重复声明报错
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let myCardId = "";
 
-// 页面加载：自动加载已审核留言，生成漂浮粒子
 window.onload = loadApprovedMessages;
 
-// 生成门禁卡+二维码
 async function generateCard() {
   try {
     myCardId = Math.random().toString(36).substring(2, 12);
@@ -181,101 +168,67 @@ async function generateCard() {
   }
 }
 
-// 打开留言面板
 function openMessagePanel() {
   document.getElementById("cardModal").style.display = "none";
   document.getElementById("msgPanel").style.display = "block";
 }
 
-// 关闭所有弹窗
 function closeAllModal() {
   document.getElementById("cardModal").style.display = "none";
   document.getElementById("msgPanel").style.display = "none";
-  loadApprovedMessages(); // 关闭时刷新漂浮留言
+  loadApprovedMessages();
 }
 
-// 提交留言
 async function submitMessage() {
   const content = document.getElementById("userMsg").value.trim();
-  if (!content) return alert("请输入留言内容");
+  if (!content) return alert("请输入内容");
   await sbClient.from("messages").insert([{
     content: content,
     type: "text",
     is_approved: false
   }]);
-  alert("提交成功！管理员审核后将显示在主页");
+  alert("提交成功！审核后显示");
   document.getElementById("userMsg").value = "";
 }
 
-// 领取抽奖码
 async function getMyLotteryCode() {
   try {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const { error } = await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
-    if (error) throw error;
-    alert("✅ 抽奖码领取成功！\n你的抽奖码是：" + code);
+    await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
+    alert("✅ 抽奖码：" + code);
   } catch (error) {
-    alert("❌ 领取失败：" + error.message);
+    alert("❌ 失败：" + error.message);
   }
 }
 
-// 抽奖
 async function startLottery() {
   const code = document.getElementById("lotteryCodeInput").value.trim();
-  if (!code) return alert("请先领取抽奖码");
-  try {
-    const { data, error } = await sbClient.from("lottery_codes")
-      .select("*").eq("code", code).limit(1);
-    if (error) throw error;
-    if (data.length === 0) return alert("❌ 无效抽奖码");
-    if (data[0].is_used) return alert("❌ 已使用的抽奖码");
-    
-    const prizes = ["奖品A", "奖品B", "奖品C", "奖品D", "奖品E", "奖品F"];
-    const result = prizes[Math.floor(Math.random() * prizes.length)];
-    await sbClient.from("lottery_codes")
-      .update({is_used: true, prize: result})
-      .eq("code", code);
-    document.getElementById("lotteryResult").innerText = "🎉 恭喜获得：" + result;
-  } catch (error) {
-    alert("❌ 抽奖失败：" + error.message);
-  }
+  if (!code) return alert("请输入抽奖码");
+  const { data, error } = await sbClient.from("lottery_codes").select("*").eq("code", code).limit(1);
+  if (error || !data.length) return alert("❌ 无效码");
+  if (data[0].is_used) return alert("❌ 已使用");
+  
+  const prizes = ["奖品A","奖品B","奖品C","奖品D","奖品E","奖品F"];
+  const res = prizes[Math.floor(Math.random()*prizes.length)];
+  await sbClient.from("lottery_codes").update({is_used:true,prize:res}).eq("code",code);
+  document.getElementById("lotteryResult").innerText = "🎉 恭喜："+res;
 }
 
-// 加载已审核留言 → 生成随机漂浮粒子（核心功能）
 async function loadApprovedMessages() {
-  // 清空旧粒子
-  document.querySelectorAll('.particle').forEach(p => p.remove());
-  
-  const { data } = await sbClient.from("messages")
-    .select("content").eq("is_approved", true);
-    
-  if (data) data.forEach(msg => createFloatParticle(msg.content));
+  document.querySelectorAll('.particle').forEach(p=>p.remove());
+  const { data } = await sbClient.from("messages").select("content").eq("is_approved",true);
+  if(data) data.forEach(m=>createFloatParticle(m.content));
 }
 
-// 创建无规则漂浮粒子
 function createFloatParticle(text) {
-  const div = document.createElement("div");
-  div.className = "particle";
-  div.innerText = text;
-  document.body.appendChild(div);
-  
-  let x = Math.random() * window.innerWidth;
-  let y = Math.random() * window.innerHeight;
-  let vx = (Math.random() - 0.5) * 0.8;
-  let vy = (Math.random() - 0.5) * 0.8;
-  
-  div.style.left = x + "px";
-  div.style.top = y + "px";
-  
-  function animate() {
-    x += vx; y += vy;
-    if (x < 0 || x > window.innerWidth) vx = -vx;
-    if (y < 0 || y > window.innerHeight) vy = -vy;
-    div.style.left = x + "px";
-    div.style.top = y + "px";
-    requestAnimationFrame(animate);
-  }
-  animate();
+  const d = document.createElement("div");
+  d.className = "particle";
+  d.innerText = text;
+  document.body.appendChild(d);
+  let x=Math.random()*innerWidth,y=Math.random()*innerHeight;
+  let vx=(Math.random()-0.5)*0.8,vy=(Math.random()-0.5)*0.8;
+  function a(){x+=vx;y+=vy;if(x<0||x>innerWidth)vx=-vx;if(y<0||y>innerHeight)vy=-vy;d.style.left=x+"px";d.style.top=y+"px";requestAnimationFrame(a);}
+  a();
 }
 </script>
 </body>
