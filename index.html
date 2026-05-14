@@ -18,7 +18,8 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #000 url('https://raw.githubusercontent.com/wangcj0822-dotcom/Weekend_Haven/main/bg.jpg') center/cover no-repeat;
+  /* 直接本地路径，和 bg.jpg 同文件夹，零跨域 */
+  background: #000 url('bg.jpg') center/cover no-repeat;
   color: #fff;
 }
 
@@ -181,54 +182,77 @@ function closeAllModal() {
 
 async function submitMessage() {
   const content = document.getElementById("userMsg").value.trim();
-  if (!content) return alert("请输入内容");
+  if (!content) return alert("请输入留言内容");
   await sbClient.from("messages").insert([{
     content: content,
     type: "text",
     is_approved: false
   }]);
-  alert("提交成功！审核后显示");
+  alert("提交成功！管理员审核后将显示在主页");
   document.getElementById("userMsg").value = "";
 }
 
 async function getMyLotteryCode() {
   try {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
-    alert("✅ 抽奖码：" + code);
+    const { error } = await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
+    if (error) throw error;
+    alert("✅ 抽奖码领取成功！\n你的抽奖码是：" + code);
   } catch (error) {
-    alert("❌ 失败：" + error.message);
+    alert("❌ 领取失败：" + error.message);
   }
 }
 
 async function startLottery() {
   const code = document.getElementById("lotteryCodeInput").value.trim();
-  if (!code) return alert("请输入抽奖码");
-  const { data, error } = await sbClient.from("lottery_codes").select("*").eq("code", code).limit(1);
-  if (error || !data.length) return alert("❌ 无效码");
-  if (data[0].is_used) return alert("❌ 已使用");
-  
-  const prizes = ["奖品A","奖品B","奖品C","奖品D","奖品E","奖品F"];
-  const res = prizes[Math.floor(Math.random()*prizes.length)];
-  await sbClient.from("lottery_codes").update({is_used:true,prize:res}).eq("code",code);
-  document.getElementById("lotteryResult").innerText = "🎉 恭喜："+res;
+  if (!code) return alert("请先领取抽奖码");
+  try {
+    const { data, error } = await sbClient.from("lottery_codes")
+      .select("*").eq("code", code).limit(1);
+    if (error) throw error;
+    if (data.length === 0) return alert("❌ 无效抽奖码");
+    if (data[0].is_used) return alert("❌ 已使用的抽奖码");
+    
+    const prizes = ["奖品A", "奖品B", "奖品C", "奖品D", "奖品E", "奖品F"];
+    const result = prizes[Math.floor(Math.random() * prizes.length)];
+    await sbClient.from("lottery_codes")
+      .update({is_used: true, prize: result})
+      .eq("code", code);
+    document.getElementById("lotteryResult").innerText = "🎉 恭喜获得：" + result;
+  } catch (error) {
+    alert("❌ 抽奖失败：" + error.message);
+  }
 }
 
 async function loadApprovedMessages() {
-  document.querySelectorAll('.particle').forEach(p=>p.remove());
-  const { data } = await sbClient.from("messages").select("content").eq("is_approved",true);
-  if(data) data.forEach(m=>createFloatParticle(m.content));
+  document.querySelectorAll('.particle').forEach(p => p.remove());
+  const { data } = await sbClient.from("messages").select("content").eq("is_approved", true);
+  if (data) data.forEach(msg => createFloatParticle(msg.content));
 }
 
 function createFloatParticle(text) {
-  const d = document.createElement("div");
-  d.className = "particle";
-  d.innerText = text;
-  document.body.appendChild(d);
-  let x=Math.random()*innerWidth,y=Math.random()*innerHeight;
-  let vx=(Math.random()-0.5)*0.8,vy=(Math.random()-0.5)*0.8;
-  function a(){x+=vx;y+=vy;if(x<0||x>innerWidth)vx=-vx;if(y<0||y>innerHeight)vy=-vy;d.style.left=x+"px";d.style.top=y+"px";requestAnimationFrame(a);}
-  a();
+  const div = document.createElement("div");
+  div.className = "particle";
+  div.innerText = text;
+  document.body.appendChild(div);
+  
+  let x = Math.random() * window.innerWidth;
+  let y = Math.random() * window.innerHeight;
+  let vx = (Math.random() - 0.5) * 0.8;
+  let vy = (Math.random() - 0.5) * 0.8;
+  
+  div.style.left = x + "px";
+  div.style.top = y + "px";
+  
+  function animate() {
+    x += vx; y += vy;
+    if (x < 0 || x > window.innerWidth) vx = -vx;
+    if (y < 0 || y > window.innerHeight) vy = -vy;
+    div.style.left = x + "px";
+    div.style.top = y + "px";
+    requestAnimationFrame(animate);
+  }
+  animate();
 }
 </script>
 </body>
