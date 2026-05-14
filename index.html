@@ -1,16 +1,15 @@
-<!DOCTYPE html><!DOCTYPE html>
-<html lang===="zh-CN">===="zh-CN">
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-<meta charset===="UTF-8">===="UTF-8">
-<meta name===="viewport" content===="width=device-width, initial-scale=1.0">===="viewport" content===="width=device-width, initial-scale=1.0">
-<title>太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站太空留言站</title>
-<!-- 改用官方稳定版二维码库，100%加载成功 -->
-<script src================================================================"https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">>>>>>>>>>>>>>>></script>
-<script src================================================================"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">>>>>>>>>>>>>>>></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>太空留言站</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-**{margin::0;;padding::0;;box-sizing::border-box;;font-family::system-ui, , sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, sans-serif}
 body{
-width::100vw;;height::100vh;;overflow::hidden;;background:#111;:#111;
+width:100vw;height:100vh;overflow:hidden;background:#111;
 background-image:url('https://picsum.photos/id/1039/1920/1080');
 background-size:cover;background-position:center;color:#fff;
 }
@@ -81,24 +80,15 @@ const SUPABASE_URL = "https://arxbijpfazirchlvjjgw.supabase.co/rest/v1/";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeGJpanBmYXppcmNobHZqamd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDgyNzgsImV4cCI6MjA5NDI4NDI3OH0.-4jdMitiNuvFGNlXcsxqnzaHZ0oF3xR_nyBk52rnZ2M";
 
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  // 打开网站立刻测试数据库连接
-sbClient.from("access_cards").select("count").limit(1).then(({error}) => {
-  if (error) {
-    alert("❌ 数据库连接失败！请检查URL和密钥是否正确\n错误：" + error.message);
-  } else {
-    alert("✅ 数据库连接成功！所有功能正常");
-  }
-});
 let myCardId = "";
 
-// 修复后的二维码生成（100%成功）
+// 生成门禁卡（表名：access_cards）
 async function generateCard() {
   try {
     myCardId = Math.random().toString(36).substring(2, 12);
     document.getElementById("cardModal").style.display = "block";
     document.getElementById("cardCode").innerText = "门禁码：" + myCardId;
     
-    // 清空旧二维码，重新生成
     document.getElementById("qrcode").innerHTML = "";
     new QRCode(document.getElementById("qrcode"), {
       text: myCardId,
@@ -111,7 +101,7 @@ async function generateCard() {
     
     await sbClient.from("access_cards").insert([{qr_code: myCardId}]);
   } catch (error) {
-    alert("二维码生成错误：" + error.message + "\n请刷新页面重试");
+    alert("错误：" + error.message);
   }
 }
 
@@ -120,6 +110,7 @@ function enterMessagePage() {
   document.getElementById("messageModal").style.display = "block";
 }
 
+// 提交留言（表名：messages）
 async function submitMessage() {
   const content = document.getElementById("userMsg").value.trim();
   if (!content) return alert("请输入留言内容");
@@ -132,34 +123,54 @@ async function submitMessage() {
   document.getElementById("userMsg").value = "";
 }
 
+// 领取抽奖码（表名：lottery_codes）
 async function getMyLotteryCode() {
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
-  alert("你的抽奖码：" + code);
+  try {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const { error } = await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
+    
+    if (error) throw error;
+    alert("✅ 抽奖码领取成功！\n你的抽奖码是：" + code + "\n\n请直接复制这个码去抽奖");
+  } catch (error) {
+    alert("❌ 领取失败：" + error.message);
+  }
 }
 
+// 抽奖（表名：lottery_codes）
 async function startLottery() {
   const code = document.getElementById("lotteryCodeInput").value.trim();
-  if (!code) return alert("请输入抽奖码");
+  if (!code) return alert("请先点击「领取抽奖码」获取有效码");
   
-  const { data } = await sbClient.from("lottery_codes")
-    .select("*")
-    .eq("code", code)
-    .single();
+  try {
+    const { data, error } = await sbClient.from("lottery_codes")
+      .select("*")
+      .eq("code", code)
+      .limit(1);
+      
+    if (error) throw error;
     
-  if (!data || data.is_used) return alert("无效或已使用的抽奖码");
-  
-  const prizes = ["奖品A", "奖品B", "奖品C", "奖品D", "奖品E", "奖品F"];
-  const result = prizes[Math.floor(Math.random() * prizes.length)];
-  
-  await sbClient.from("lottery_codes")
-    .update({is_used: true, prize: result})
-    .eq("code", code);
+    if (data.length === 0) {
+      return alert("❌ 无效的抽奖码\n\n请确认你是点击「领取抽奖码」获取的码");
+    }
     
-  document.getElementById("lotteryResult").innerText = "🎉 恭喜获得：" + result;
+    if (data[0].is_used) {
+      return alert("❌ 这个抽奖码已经使用过了");
+    }
+    
+    const prizes = ["奖品A", "奖品B", "奖品C", "奖品D", "奖品E", "奖品F"];
+    const result = prizes[Math.floor(Math.random() * prizes.length)];
+    
+    await sbClient.from("lottery_codes")
+      .update({is_used: true, prize: result})
+      .eq("code", code);
+      
+    document.getElementById("lotteryResult").innerText = "🎉 恭喜获得：" + result;
+  } catch (error) {
+    alert("❌ 抽奖失败：" + error.message);
+  }
 }
 
-// 只加载审核通过的留言
+// 加载已审核留言（表名：messages）
 async function loadApprovedMessages() {
   const { data } = await sbClient.from("messages")
     .select("*")
