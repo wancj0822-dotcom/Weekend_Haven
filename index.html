@@ -2,55 +2,106 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>周末收留所</title>
+<!-- 引入必要库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: system-ui, sans-serif;
+  font-family: "幼圆", "YouYuan", system-ui, -apple-system, sans-serif;
 }
+
 body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #000 url('bg.jpg') center/cover no-repeat;
+  /* 背景叠加深色渐变提升氛围感 */
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('bg.jpg') center/cover no-repeat;
   color: #fff;
 }
+
+/* 漂浮留言粒子 */
 .particle {
   position: absolute;
-  padding: 6px 12px;
+  padding: 4px 10px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 50px;
   backdrop-filter: blur(10px);
   white-space: nowrap;
   pointer-events: none;
-  font-size: 14px;
+  font-size: 3.5vw;
   color: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 80vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.main-btn {
+
+/* 入口面板 */
+.entry-panel {
   position: fixed;
-  bottom: 40px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  padding: 14px 36px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 90vw;
+  max-width: 400px;
+  z-index: 10;
+}
+
+.entry-panel h1 {
+  font-size: 8vw;
+  margin-bottom: 20px;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+  letter-spacing: 2px;
+}
+
+.entry-panel p {
+  font-size: 4vw;
+  margin-bottom: 30px;
+  opacity: 0.8;
+}
+
+.entry-panel input {
+  width: 100%;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 4.5vw;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  outline: none;
+}
+
+.main-btn {
+  width: 100%;
+  padding: 16px 36px;
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 100px;
-  font-size: 16px;
+  border-radius: 50px;
+  font-size: 4.5vw;
   cursor: pointer;
-  z-index: 999;
   backdrop-filter: blur(10px);
   transition: 0.3s;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
+
 .main-btn:hover {
   background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.02);
 }
+
+/* 通用弹窗 */
 .panel {
   display: none;
   position: fixed;
@@ -62,60 +113,243 @@ body {
   z-index: 1000;
   padding: 20px;
 }
+
+/* 门禁卡容器 */
+.card-container {
+  max-width: 90vw;
+  margin: 10vh auto;
+  text-align: center;
+}
+
+/* 精美渐变门禁卡 */
 .card {
+  width: 85vw;
+  max-width: 350px;
+  height: 55vw;
+  max-height: 220px;
+  border-radius: 20px;
+  padding: 20px;
+  margin: 0 auto 30px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: background 0.5s ease;
+}
+
+.card-nickname {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 5vw;
+  font-weight: bold;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.card-qrcode {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 25vw;
+  max-width: 100px;
+  height: 25vw;
+  max-height: 100px;
+  background: #fff;
+  padding: 5px;
+  border-radius: 8px;
+}
+
+.card-code {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  font-size: 3.5vw;
+  opacity: 0.9;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* 卡片按钮组 */
+.card-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 85vw;
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.card-btn {
+  padding: 14px;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 4vw;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: 0.3s;
+}
+
+.card-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.card-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 留言&抽奖面板 */
+.msg-card {
   background: rgba(20, 20, 30, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
-  padding: 30px;
-  max-width: 400px;
-  margin: 60px auto;
+  padding: 30px 20px;
+  max-width: 90vw;
+  margin: 10vh auto;
   text-align: center;
   backdrop-filter: blur(20px);
 }
-#qrcode {
-  margin: 20px auto;
-  width: 180px;
-  height: 180px;
-  background: #fff;
-  padding: 10px;
-  border-radius: 10px;
+
+.msg-card h2 {
+  font-size: 6vw;
+  margin-bottom: 20px;
 }
-input, textarea, button {
+
+.msg-card textarea {
+  height: 100px;
+  resize: none;
+}
+
+.msg-card input, .msg-card textarea, .msg-card button {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   margin: 8px 0;
   border-radius: 12px;
   border: none;
-  font-size: 15px;
+  font-size: 4vw;
   background: rgba(255,255,255,0.1);
   color: #fff;
   border: 1px solid rgba(255,255,255,0.2);
+  outline: none;
 }
-button {
+
+.msg-card button {
   background: rgba(255,255,255,0.2);
   font-weight: bold;
   cursor: pointer;
   transition: 0.2s;
 }
-button:hover {
+
+.msg-card button:hover {
   background: rgba(255,255,255,0.3);
+}
+
+/* 留言墙面板 */
+.wall-card {
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 30px 20px;
+  max-width: 90vw;
+  max-height: 80vh;
+  margin: 10vh auto;
+  backdrop-filter: blur(20px);
+  overflow-y: auto;
+}
+
+.wall-card h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 6vw;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.message-item {
+  background: rgba(255,255,255,0.05);
+  padding: 15px;
+  border-radius: 12px;
+  border-left: 3px solid rgba(255,255,255,0.3);
+}
+
+.message-nickname {
+  font-weight: bold;
+  font-size: 4vw;
+  margin-bottom: 5px;
+}
+
+.message-content {
+  font-size: 3.8vw;
+  opacity: 0.9;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.message-time {
+  font-size: 3vw;
+  opacity: 0.6;
+  text-align: right;
+}
+
+.close-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 4vw;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: 0.3s;
+}
+
+.close-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+#lotteryResult {
+  margin-top: 10px;
+  font-size: 4.5vw;
+  font-weight: bold;
+  color: #ffd700;
 }
 </style>
 </head>
 <body>
-<button class="main-btn" onclick="generateCard()">领取门禁卡</button>
+<!-- 入口界面 -->
+<div class="entry-panel">
+  <h1>周末收留所</h1>
+  <p>输入你的昵称，领取专属门禁卡</p>
+  <input type="text" id="nicknameInput" placeholder="请输入你的昵称" maxlength="10">
+  <button class="main-btn" onclick="generateCard()">领取门禁卡</button>
+</div>
+
+<!-- 门禁卡弹窗 -->
 <div class="panel" id="cardModal">
-  <div class="card">
-    <h2>你的专属门禁卡</h2>
-    <div id="qrcode"></div>
-    <p id="cardCode"></p>
-    <br>
-    <button onclick="openMessagePanel()">进入留言&抽奖</button>
-    <button onclick="closeAllModal()">关闭</button>
+  <div class="card-container">
+    <div class="card" id="accessCard">
+      <div class="card-nickname" id="cardNickname"></div>
+      <div class="card-qrcode" id="qrcode"></div>
+      <div class="card-code" id="cardCode"></div>
+    </div>
+    <div class="card-buttons">
+      <button class="card-btn" onclick="shareCard()">分享给朋友</button>
+      <button class="card-btn" onclick="regenerateCard()">重新领取</button>
+      <button class="card-btn secondary" onclick="openMessagePanel()">进入留言&抽奖</button>
+    </div>
   </div>
 </div>
+
+<!-- 留言&抽奖弹窗 -->
 <div class="panel" id="msgPanel">
-  <div class="card">
+  <div class="msg-card">
     <h2>留言 & 抽奖</h2>
     <textarea id="userMsg" placeholder="写下你想说的话"></textarea>
     <button onclick="submitMessage()">提交留言（审核后显示）</button>
@@ -125,63 +359,291 @@ button:hover {
     <p id="lotteryResult"></p>
     <br>
     <button onclick="getMyLotteryCode()">领取抽奖码</button>
+    <button onclick="openMessageWall()">住户留言墙</button>
     <button onclick="closeAllModal()">返回主页</button>
   </div>
 </div>
+
+<!-- 住户留言墙弹窗 -->
+<div class="panel" id="messageWallPanel">
+  <div class="wall-card">
+    <h2>住户留言墙</h2>
+    <div class="message-list" id="messageList"></div>
+    <button class="close-btn" onclick="closeMessageWall()">返回</button>
+  </div>
+</div>
+
 <script>
+// Supabase配置（保持不变）
 const SUPABASE_URL = "https://arxbijpfazirchlvjjgw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeGJpanBmYXppcmNobHZqamd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDgyNzgsImV4cCI6MjA5NDI4NDI3OH0.-4jdMitiNuvFGNlXcsxqnzaHZ0oF3xR_nyBk52rnZ2M";
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let myCardId = "";
+
+// 全局变量
+let currentNickname = "";
+let currentCardId = "";
+window.allMessages = [];
+
+// 预定义精美渐变配色（8种高级感配色）
+const gradients = [
+  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", // 紫蓝渐变
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", // 粉紫渐变
+  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", // 天蓝渐变
+  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)", // 青绿渐变
+  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", // 粉黄渐变
+  "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)", // 浅粉渐变
+  "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)", // 樱花渐变
+  "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)"  // 橙黄渐变
+];
+
+// 页面加载时初始化
 window.onload = loadApprovedMessages;
+
+// 获取随机渐变
+function getRandomGradient() {
+  return gradients[Math.floor(Math.random() * gradients.length)];
+}
+
+// 生成专属门禁卡
 async function generateCard() {
+  const nickname = document.getElementById("nicknameInput").value.trim();
+  if (!nickname) {
+    alert("请输入你的昵称");
+    return;
+  }
+  
+  currentNickname = nickname;
+  currentCardId = Math.random().toString(36).substring(2, 12);
+  
+  // 隐藏入口面板
+  document.querySelector(".entry-panel").style.display = "none";
+  
+  // 显示卡片
+  document.getElementById("cardModal").style.display = "block";
+  document.getElementById("cardNickname").innerText = nickname;
+  document.getElementById("cardCode").innerText = "编号：" + currentCardId;
+  
+  // 设置随机渐变背景
+  document.getElementById("accessCard").style.background = getRandomGradient();
+  
+  // 生成二维码
+  document.getElementById("qrcode").innerHTML = "";
+  new QRCode(document.getElementById("qrcode"), {
+    text: currentCardId,
+    width: 100,
+    height: 100,
+    colorDark: "#000",
+    colorLight: "#fff"
+  });
+  
+  // 保存到数据库
   try {
-    myCardId = Math.random().toString(36).substring(2, 12);
-    document.getElementById("cardModal").style.display = "block";
-    document.getElementById("cardCode").innerText = "门禁码：" + myCardId;
-    document.getElementById("qrcode").innerHTML = "";
-    new QRCode(document.getElementById("qrcode"), {text: myCardId,width:180,height:180,colorDark:"#000",colorLight:"#fff"});
-    await sbClient.from("access_cards").insert([{qr_code:myCardId}]);
-  }catch(e){alert("错误："+e.message);}
+    await sbClient.from("access_cards").insert([{
+      qr_code: currentCardId,
+      nickname: nickname
+    }]);
+  } catch(e) {
+    console.log("保存卡片失败：", e.message);
+  }
 }
-function openMessagePanel(){document.getElementById("cardModal").style.display="none";document.getElementById("msgPanel").style.display="block";}
-function closeAllModal(){document.getElementById("cardModal").style.display="none";document.getElementById("msgPanel").style.display="none";loadApprovedMessages();}
-async function submitMessage(){
-  const c=document.getElementById("userMsg").value.trim();
-  if(!c)return alert("请输入内容");
-  await sbClient.from("messages").insert([{content:c,type:"text",is_approved:false}]);
-  alert("提交成功，审核后显示");
-  document.getElementById("userMsg").value="";
+
+// 重新生成卡片（仅换颜色，编号和昵称不变）
+function regenerateCard() {
+  document.getElementById("accessCard").style.background = getRandomGradient();
 }
-async function getMyLotteryCode(){
-  try{
-    const code=Math.floor(100000+Math.random()*900000).toString();
-    await sbClient.from("lottery_codes").insert([{code:code,is_used:false}]);
-    alert("抽奖码："+code);
-  }catch(e){alert("失败："+e.message);}
+
+// 分享卡片（生成图片保存到相册）
+async function shareCard() {
+  const card = document.getElementById("accessCard");
+  try {
+    const canvas = await html2canvas(card, {
+      backgroundColor: null,
+      scale: 2, // 高清输出
+      useCORS: true
+    });
+    
+    const link = document.createElement("a");
+    link.download = `周末收留所门禁卡-${currentNickname}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    
+    alert("✅ 卡片已保存到相册，快去分享给朋友吧！");
+  } catch(e) {
+    alert("❌ 分享失败，请稍后重试");
+    console.log(e);
+  }
 }
-async function startLottery(){
-  const code=document.getElementById("lotteryCodeInput").value.trim();
-  if(!code)return alert("请输入抽奖码");
-  const {data}=await sbClient.from("lottery_codes").select("*").eq("code",code).limit(1);
-  if(!data||!data.length)return alert("无效码");
-  if(data[0].is_used)return alert("已使用");
-  const prize=["奖品A","奖品B","奖品C","奖品D","奖品E","奖品F"][Math.floor(Math.random()*6)];
-  await sbClient.from("lottery_codes").update({is_used:true,prize:prize}).eq("code",code);
-  document.getElementById("lotteryResult").innerText="恭喜："+prize;
+
+// 打开留言&抽奖面板
+function openMessagePanel() {
+  document.getElementById("cardModal").style.display = "none";
+  document.getElementById("msgPanel").style.display = "block";
 }
-async function loadApprovedMessages(){
-  document.querySelectorAll(".particle").forEach(p=>p.remove());
-  const {data}=await sbClient.from("messages").select("content").eq("is_approved",true);
-  data&&data.forEach(m=>createFloatParticle(m.content));
+
+// 打开留言墙
+function openMessageWall() {
+  document.getElementById("msgPanel").style.display = "none";
+  document.getElementById("messageWallPanel").style.display = "block";
+  
+  // 渲染留言列表
+  const list = document.getElementById("messageList");
+  list.innerHTML = "";
+  
+  if (window.allMessages && window.allMessages.length > 0) {
+    window.allMessages.forEach(m => {
+      const item = document.createElement("div");
+      item.className = "message-item";
+      
+      // 格式化时间为中文友好格式
+      const time = new Date(m.created_at).toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      
+      item.innerHTML = `
+        <div class="message-nickname">${m.nickname}</div>
+        <div class="message-content">${m.content}</div>
+        <div class="message-time">${time}</div>
+      `;
+      list.appendChild(item);
+    });
+  } else {
+    list.innerHTML = "<p style='text-align:center; opacity:0.6;'>暂无留言，快来抢沙发吧！</p>";
+  }
 }
-function createFloatParticle(text){
-  const d=document.createElement("div");
-  d.className="particle";d.innerText=text;document.body.appendChild(d);
-  let x=Math.random()*innerWidth,y=Math.random()*innerHeight;
-  let vx=(Math.random()-0.5)*0.8,vy=(Math.random()-0.5)*0.8;
-  function a(){x+=vx;y+=vy;if(x<0||x>innerWidth)vx=-vx;if(y<0||y>innerHeight)vy=-vy;d.style.left=x+"px";d.style.top=y+"px";requestAnimationFrame(a);}
-  a();
+
+// 关闭留言墙
+function closeMessageWall() {
+  document.getElementById("messageWallPanel").style.display = "none";
+  document.getElementById("msgPanel").style.display = "block";
+}
+
+// 关闭所有弹窗返回主页
+function closeAllModal() {
+  document.getElementById("cardModal").style.display = "none";
+  document.getElementById("msgPanel").style.display = "none";
+  document.getElementById("messageWallPanel").style.display = "none";
+  document.querySelector(".entry-panel").style.display = "block";
+  loadApprovedMessages();
+}
+
+// 提交留言
+async function submitMessage() {
+  const content = document.getElementById("userMsg").value.trim();
+  if (!content) return alert("请输入内容");
+  
+  try {
+    await sbClient.from("messages").insert([{
+      content: content,
+      nickname: currentNickname,
+      type: "text",
+      is_approved: false
+    }]);
+    alert("✅ 提交成功，审核后将显示在留言墙和漂浮弹幕中");
+    document.getElementById("userMsg").value = "";
+  } catch(e) {
+    alert("❌ 提交失败：" + e.message);
+  }
+}
+
+// 领取抽奖码
+async function getMyLotteryCode() {
+  try {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    await sbClient.from("lottery_codes").insert([{
+      code: code,
+      is_used: false,
+      nickname: currentNickname
+    }]);
+    alert(`🎁 你的抽奖码：${code}\n请妥善保存，中奖后凭码兑奖！`);
+  } catch(e) {
+    alert("❌ 领取失败：" + e.message);
+  }
+}
+
+// 开始抽奖
+async function startLottery() {
+  const code = document.getElementById("lotteryCodeInput").value.trim();
+  if (!code) return alert("请输入抽奖码");
+  
+  try {
+    const { data } = await sbClient.from("lottery_codes")
+      .select("*")
+      .eq("code", code)
+      .limit(1);
+    
+    if (!data || !data.length) return alert("❌ 无效抽奖码");
+    if (data[0].is_used) return alert("❌ 该抽奖码已使用");
+    
+    // 随机抽取奖品
+    const prizes = ["一等奖：全年免费入住", "二等奖：双人周末套餐", "三等奖：精美周边礼包", "四等奖：专属门禁卡升级", "五等奖：留言置顶特权", "谢谢参与"];
+    const prize = prizes[Math.floor(Math.random() * prizes.length)];
+    
+    // 更新抽奖码状态
+    await sbClient.from("lottery_codes").update({
+      is_used: true,
+      prize: prize,
+      draw_time: new Date()
+    }).eq("code", code);
+    
+    document.getElementById("lotteryResult").innerText = `🎉 ${prize}`;
+  } catch(e) {
+    alert("❌ 抽奖失败：" + e.message);
+  }
+}
+
+// 加载审核通过的留言
+async function loadApprovedMessages() {
+  document.querySelectorAll(".particle").forEach(p => p.remove());
+  try {
+    const { data } = await sbClient.from("messages")
+      .select("content, nickname, created_at")
+      .eq("is_approved", true)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    
+    if (data) {
+      window.allMessages = data;
+      data.forEach(m => {
+        createFloatParticle(`${m.nickname}：${m.content}`);
+      });
+    }
+  } catch(e) {
+    console.log("加载留言失败：", e);
+  }
+}
+
+// 创建漂浮留言粒子
+function createFloatParticle(text) {
+  const div = document.createElement("div");
+  div.className = "particle";
+  div.innerText = text;
+  document.body.appendChild(div);
+  
+  // 随机初始位置和速度
+  let x = Math.random() * (innerWidth - div.offsetWidth);
+  let y = Math.random() * (innerHeight - div.offsetHeight);
+  let vx = (Math.random() - 0.5) * 0.8;
+  let vy = (Math.random() - 0.5) * 0.8;
+  
+  // 动画循环
+  function animate() {
+    x += vx;
+    y += vy;
+    
+    // 边界反弹
+    if (x < 0 || x > innerWidth - div.offsetWidth) vx = -vx;
+    if (y < 0 || y > innerHeight - div.offsetHeight) vy = -vy;
+    
+    div.style.left = x + "px";
+    div.style.top = y + "px";
+    requestAnimationFrame(animate);
+  }
+  
+  animate();
 }
 </script>
 </body>
