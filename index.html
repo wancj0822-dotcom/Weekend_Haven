@@ -7,227 +7,212 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, sans-serif}
-body{
-width:100vw;height:100vh;overflow:hidden;background:#111;
-background-image:url('https://picsum.photos/id/1039/1920/1080');
-background-size:cover;background-position:center;color:#fff;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
 }
-.particle{
-position:absolute;padding:8px 14px;background:rgba(255,255,255,0.15);
-border-radius:30px;backdrop-filter:blur(8px);
-white-space:nowrap;pointer-events:none;font-size:14px;
-border:1px solid rgba(255,255,255,0.25);
+
+/* 太空极简背景 —— 这里换背景图！*/
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+  background-image: url('https://picsum.photos/id/1039/1920/1080');
+  background-size: cover;
+  background-position: center;
+  color: #fff;
 }
-.btn{
-position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
-padding:16px 40px;background:#fff;color:#000;border:none;
-border-radius:100px;font-size:18px;cursor:pointer;z-index:999;
-box-shadow:0 0 25px rgba(255,255,255,0.35)
+
+/* 留言粒子样式：极简太空风 */
+.particle {
+  position: absolute;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: float 8s infinite linear;
 }
-.panel{
-display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;
-background:rgba(0,0,0,0.9);z-index:1000;padding:20px;
+
+/* 按钮：极简悬浮按钮 */
+.btn {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 36px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 100px;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 999;
+  backdrop-filter: blur(10px);
+  transition: 0.3s;
 }
-.card{
-background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:30px;
-max-width:400px;margin:60px auto;text-align:center;
+.btn:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
-#qrcode{margin:20px auto;width:200px;height:200px;background:#fff;padding:10px;border-radius:10px}
-input,textarea,button{
-width:100%;padding:14px;margin:8px 0;border-radius:12px;border:none;
-font-size:16px;
+
+/* 弹窗面板 */
+.panel {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  padding: 20px;
 }
-button{background:#fff;color:#000;font-weight:bold;cursor:pointer}
+.card {
+  background: rgba(20, 20, 30, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 400px;
+  margin: 60px auto;
+  text-align: center;
+  backdrop-filter: blur(20px);
+}
+#qrcode {
+  margin: 20px auto;
+  width: 180px;
+  height: 180px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 10px;
+}
+input, textarea, button {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+button {
+  background: rgba(255,255,255,0.2);
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover {
+  background: rgba(255,255,255,0.3);
+}
 </style>
 </head>
 
 <body>
-<button class="btn" onclick="testConnection()">先点我测试连接</button>
+<button class="btn" onclick="openPanel()">进入留言</button>
 
-<div class="panel" id="cardModal">
-<div class="card">
-<h2>你的专属门禁卡</h2>
-<div id="qrcode"></div>
-<p id="cardCode"></p>
-<br>
-<button onclick="enterMessagePage()">进入留言站</button>
-<button onclick="closeModal()">关闭</button>
-</div>
-</div>
-
-<div class="panel" id="messageModal">
-<div class="card">
-<h2>留言 & 抽奖</h2>
-<textarea id="userMsg" placeholder="写下你想说的话"></textarea>
-<button onclick="submitMessage()">提交留言（审核后显示）</button>
-<br><br>
-
-<input id="lotteryCodeInput" placeholder="输入抽奖码">
-<button onclick="startLottery()">立即抽奖</button>
-<p id="lotteryResult"></p>
-<br>
-<button onclick="getMyLotteryCode()">领取抽奖码</button>
-<button onclick="goBack()">返回主页</button>
-</div>
+<div class="panel" id="msgPanel">
+  <div class="card">
+    <h2>💬 留言</h2>
+    <textarea id="content" placeholder="写下你的留言..."></textarea>
+    <button onclick="sendMsg()">提交（需审核）</button>
+    <br>
+    <button onclick="closePanel()">关闭</button>
+  </div>
 </div>
 
 <script>
 // ======================
-// 只改下面这两行！
+// 只改这两行！
 // ======================
 const SUPABASE_URL = "https://arxbijpfazirchlvjjgw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeGJpanBmYXppcmNobHZqamd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDgyNzgsImV4cCI6MjA5NDI4NDI3OH0.-4jdMitiNuvFGNlXcsxqnzaHZ0oF3xR_nyBk52rnZ2M";
 
-const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let myCardId = "";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 连接测试（点击第一个按钮运行）
-async function testConnection() {
-  alert("正在测试数据库连接...\n项目URL：" + SUPABASE_URL);
-  
-  try {
-    // 测试三个表是否都存在
-    const tables = ["access_cards", "lottery_codes", "messages"];
-    for (const table of tables) {
-      const { error } = await sbClient.from(table).select("count").limit(1);
-      if (error) {
-        throw new Error(`表 ${table} 不存在或无法访问：${error.message}`);
-      }
-    }
-    
-    alert("✅ 所有表连接成功！\n现在可以正常使用所有功能");
-    document.querySelector(".btn").innerText = "领取门禁卡";
-    document.querySelector(".btn").onclick = generateCard;
-  } catch (error) {
-    alert("❌ 连接失败：" + error.message + "\n\n请确认：\n1. 项目URL和密钥完全正确\n2. 三个表都已创建\n3. 三个表都有guest_all权限");
-  }
-}
+// 页面加载 → 自动显示所有已审核留言
+window.onload = async function () {
+  loadAllApprovedMessages();
+};
 
-async function generateCard() {
-  try {
-    myCardId = Math.random().toString(36).substring(2, 12);
-    document.getElementById("cardModal").style.display = "block";
-    document.getElementById("cardCode").innerText = "门禁码：" + myCardId;
-    
-    document.getElementById("qrcode").innerHTML = "";
-    new QRCode(document.getElementById("qrcode"), {
-      text: myCardId,
-      width: 180,
-      height: 180,
-      colorDark: "#000000",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
-    });
-    
-    await sbClient.from("access_cards").insert([{qr_code: myCardId}]);
-  } catch (error) {
-    alert("错误：" + error.message);
-  }
-}
+// 加载所有通过审核的留言 → 生成漂浮粒子
+async function loadAllApprovedMessages() {
+  // 清空旧粒子
+  document.querySelectorAll(".particle").forEach(p => p.remove());
 
-function enterMessagePage() {
-  document.getElementById("cardModal").style.display = "none";
-  document.getElementById("messageModal").style.display = "block";
-}
-
-async function submitMessage() {
-  const content = document.getElementById("userMsg").value.trim();
-  if (!content) return alert("请输入留言内容");
-  await sbClient.from("messages").insert([{
-    content: content,
-    type: "text",
-    is_approved: false
-  }]);
-  alert("提交成功！管理员审核后将显示在主页");
-  document.getElementById("userMsg").value = "";
-}
-
-async function getMyLotteryCode() {
-  try {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const { error } = await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
-    
-    if (error) throw error;
-    alert("✅ 抽奖码领取成功！\n你的抽奖码是：" + code + "\n\n请直接复制这个码去抽奖");
-  } catch (error) {
-    alert("❌ 领取失败：" + error.message);
-  }
-}
-
-async function startLottery() {
-  const code = document.getElementById("lotteryCodeInput").value.trim();
-  if (!code) return alert("请先点击「领取抽奖码」获取有效码");
-  
-  try {
-    const { data, error } = await sbClient.from("lottery_codes")
-      .select("*")
-      .eq("code", code)
-      .limit(1);
-      
-    if (error) throw error;
-    
-    if (data.length === 0) {
-      return alert("❌ 无效的抽奖码\n\n请确认你是点击「领取抽奖码」获取的码");
-    }
-    
-    if (data[0].is_used) {
-      return alert("❌ 这个抽奖码已经使用过了");
-    }
-    
-    const prizes = ["奖品A", "奖品B", "奖品C", "奖品D", "奖品E", "奖品F"];
-    const result = prizes[Math.floor(Math.random() * prizes.length)];
-    
-    await sbClient.from("lottery_codes")
-      .update({is_used: true, prize: result})
-      .eq("code", code);
-      
-    document.getElementById("lotteryResult").innerText = "🎉 恭喜获得：" + result;
-  } catch (error) {
-    alert("❌ 抽奖失败：" + error.message);
-  }
-}
-
-async function loadApprovedMessages() {
-  const { data } = await sbClient.from("messages")
-    .select("*")
+  const { data } = await supabase
+    .from("messages")
+    .select("content")
     .eq("is_approved", true);
-    
-  if (data) data.forEach(msg => createFloatingParticle(msg.content));
+
+  if (!data) return;
+  
+  data.forEach(row => {
+    createFloatText(row.content);
+  });
 }
 
-function createFloatingParticle(text) {
-  const div = document.createElement("div");
-  div.className = "particle";
-  div.innerText = text;
-  document.body.appendChild(div);
-  
+// 创建随机漂浮粒子（核心）
+function createFloatText(text) {
+  const p = document.createElement("div");
+  p.className = "particle";
+  p.innerText = text;
+  document.body.appendChild(p);
+
+  // 随机位置
   let x = Math.random() * window.innerWidth;
   let y = Math.random() * window.innerHeight;
-  let vx = (Math.random() - 0.5) * 0.8;
-  let vy = (Math.random() - 0.5) * 0.8;
-  
-  div.style.left = x + "px";
-  div.style.top = y + "px";
-  
+
+  // 随机速度
+  let vx = (Math.random() - 0.5) * 1.2;
+  let vy = (Math.random() - 0.5) * 1.2;
+
+  p.style.left = x + "px";
+  p.style.top = y + "px";
+
   function animate() {
-    x += vx; y += vy;
+    x += vx;
+    y += vy;
+
+    // 碰到边界反弹
     if (x < 0 || x > window.innerWidth) vx = -vx;
     if (y < 0 || y > window.innerHeight) vy = -vy;
-    div.style.left = x + "px";
-    div.style.top = y + "px";
+
+    p.style.left = x + "px";
+    p.style.top = y + "px";
     requestAnimationFrame(animate);
   }
   animate();
 }
 
-function closeModal() {document.getElementById("cardModal").style.display = "none"}
-function goBack() {document.getElementById("messageModal").style.display = "none"}
+// 提交留言
+async function sendMsg() {
+  const content = document.getElementById("content").value.trim();
+  if (!content) return alert("请输入内容");
 
-window.onload = () => {
-  // 页面加载时自动测试连接
-  setTimeout(testConnection, 500);
-};
+  await supabase.from("messages").insert([{
+    content: content,
+    is_approved: false
+  }]);
+
+  alert("提交成功！管理员审核后会显示");
+  document.getElementById("content").value = "";
+}
+
+function openPanel() {
+  document.getElementById("msgPanel").style.display = "block";
+}
+function closePanel() {
+  document.getElementById("msgPanel").style.display = "none";
+  loadAllApprovedMessages(); // 关闭时刷新粒子
+}
 </script>
 </body>
 </html>
