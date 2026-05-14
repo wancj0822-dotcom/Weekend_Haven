@@ -13,16 +13,13 @@
   box-sizing: border-box;
   font-family: system-ui, sans-serif;
 }
-
 body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  /* 直接本地路径，和 bg.jpg 同文件夹，零跨域 */
   background: #000 url('bg.jpg') center/cover no-repeat;
   color: #fff;
 }
-
 .particle {
   position: absolute;
   padding: 6px 12px;
@@ -35,7 +32,6 @@ body {
   color: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
-
 .main-btn {
   position: fixed;
   bottom: 40px;
@@ -55,7 +51,6 @@ body {
 .main-btn:hover {
   background: rgba(255, 255, 255, 0.25);
 }
-
 .panel {
   display: none;
   position: fixed;
@@ -107,10 +102,8 @@ button:hover {
 }
 </style>
 </head>
-
 <body>
 <button class="main-btn" onclick="generateCard()">领取门禁卡</button>
-
 <div class="panel" id="cardModal">
   <div class="card">
     <h2>你的专属门禁卡</h2>
@@ -121,14 +114,12 @@ button:hover {
     <button onclick="closeAllModal()">关闭</button>
   </div>
 </div>
-
 <div class="panel" id="msgPanel">
   <div class="card">
     <h2>留言 & 抽奖</h2>
     <textarea id="userMsg" placeholder="写下你想说的话"></textarea>
     <button onclick="submitMessage()">提交留言（审核后显示）</button>
     <br><br>
-
     <input id="lotteryCodeInput" placeholder="输入抽奖码">
     <button onclick="startLottery()">立即抽奖</button>
     <p id="lotteryResult"></p>
@@ -137,122 +128,60 @@ button:hover {
     <button onclick="closeAllModal()">返回主页</button>
   </div>
 </div>
-
 <script>
 const SUPABASE_URL = "https://arxbijpfazirchlvjjgw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeGJpanBmYXppcmNobHZqamd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDgyNzgsImV4cCI6MjA5NDI4NDI3OH0.-4jdMitiNuvFGNlXcsxqnzaHZ0oF3xR_nyBk52rnZ2M";
-
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let myCardId = "";
-
 window.onload = loadApprovedMessages;
-
 async function generateCard() {
   try {
     myCardId = Math.random().toString(36).substring(2, 12);
     document.getElementById("cardModal").style.display = "block";
     document.getElementById("cardCode").innerText = "门禁码：" + myCardId;
-    
     document.getElementById("qrcode").innerHTML = "";
-    new QRCode(document.getElementById("qrcode"), {
-      text: myCardId,
-      width: 180,
-      height: 180,
-      colorDark: "#000000",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
-    });
-    
-    await sbClient.from("access_cards").insert([{qr_code: myCardId}]);
-  } catch (error) {
-    alert("错误：" + error.message);
-  }
+    new QRCode(document.getElementById("qrcode"), {text: myCardId,width:180,height:180,colorDark:"#000",colorLight:"#fff"});
+    await sbClient.from("access_cards").insert([{qr_code:myCardId}]);
+  }catch(e){alert("错误："+e.message);}
 }
-
-function openMessagePanel() {
-  document.getElementById("cardModal").style.display = "none";
-  document.getElementById("msgPanel").style.display = "block";
+function openMessagePanel(){document.getElementById("cardModal").style.display="none";document.getElementById("msgPanel").style.display="block";}
+function closeAllModal(){document.getElementById("cardModal").style.display="none";document.getElementById("msgPanel").style.display="none";loadApprovedMessages();}
+async function submitMessage(){
+  const c=document.getElementById("userMsg").value.trim();
+  if(!c)return alert("请输入内容");
+  await sbClient.from("messages").insert([{content:c,type:"text",is_approved:false}]);
+  alert("提交成功，审核后显示");
+  document.getElementById("userMsg").value="";
 }
-
-function closeAllModal() {
-  document.getElementById("cardModal").style.display = "none";
-  document.getElementById("msgPanel").style.display = "none";
-  loadApprovedMessages();
+async function getMyLotteryCode(){
+  try{
+    const code=Math.floor(100000+Math.random()*900000).toString();
+    await sbClient.from("lottery_codes").insert([{code:code,is_used:false}]);
+    alert("抽奖码："+code);
+  }catch(e){alert("失败："+e.message);}
 }
-
-async function submitMessage() {
-  const content = document.getElementById("userMsg").value.trim();
-  if (!content) return alert("请输入留言内容");
-  await sbClient.from("messages").insert([{
-    content: content,
-    type: "text",
-    is_approved: false
-  }]);
-  alert("提交成功！管理员审核后将显示在主页");
-  document.getElementById("userMsg").value = "";
+async function startLottery(){
+  const code=document.getElementById("lotteryCodeInput").value.trim();
+  if(!code)return alert("请输入抽奖码");
+  const {data}=await sbClient.from("lottery_codes").select("*").eq("code",code).limit(1);
+  if(!data||!data.length)return alert("无效码");
+  if(data[0].is_used)return alert("已使用");
+  const prize=["奖品A","奖品B","奖品C","奖品D","奖品E","奖品F"][Math.floor(Math.random()*6)];
+  await sbClient.from("lottery_codes").update({is_used:true,prize:prize}).eq("code",code);
+  document.getElementById("lotteryResult").innerText="恭喜："+prize;
 }
-
-async function getMyLotteryCode() {
-  try {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const { error } = await sbClient.from("lottery_codes").insert([{code: code, is_used: false}]);
-    if (error) throw error;
-    alert("✅ 抽奖码领取成功！\n你的抽奖码是：" + code);
-  } catch (error) {
-    alert("❌ 领取失败：" + error.message);
-  }
+async function loadApprovedMessages(){
+  document.querySelectorAll(".particle").forEach(p=>p.remove());
+  const {data}=await sbClient.from("messages").select("content").eq("is_approved",true);
+  data&&data.forEach(m=>createFloatParticle(m.content));
 }
-
-async function startLottery() {
-  const code = document.getElementById("lotteryCodeInput").value.trim();
-  if (!code) return alert("请先领取抽奖码");
-  try {
-    const { data, error } = await sbClient.from("lottery_codes")
-      .select("*").eq("code", code).limit(1);
-    if (error) throw error;
-    if (data.length === 0) return alert("❌ 无效抽奖码");
-    if (data[0].is_used) return alert("❌ 已使用的抽奖码");
-    
-    const prizes = ["奖品A", "奖品B", "奖品C", "奖品D", "奖品E", "奖品F"];
-    const result = prizes[Math.floor(Math.random() * prizes.length)];
-    await sbClient.from("lottery_codes")
-      .update({is_used: true, prize: result})
-      .eq("code", code);
-    document.getElementById("lotteryResult").innerText = "🎉 恭喜获得：" + result;
-  } catch (error) {
-    alert("❌ 抽奖失败：" + error.message);
-  }
-}
-
-async function loadApprovedMessages() {
-  document.querySelectorAll('.particle').forEach(p => p.remove());
-  const { data } = await sbClient.from("messages").select("content").eq("is_approved", true);
-  if (data) data.forEach(msg => createFloatParticle(msg.content));
-}
-
-function createFloatParticle(text) {
-  const div = document.createElement("div");
-  div.className = "particle";
-  div.innerText = text;
-  document.body.appendChild(div);
-  
-  let x = Math.random() * window.innerWidth;
-  let y = Math.random() * window.innerHeight;
-  let vx = (Math.random() - 0.5) * 0.8;
-  let vy = (Math.random() - 0.5) * 0.8;
-  
-  div.style.left = x + "px";
-  div.style.top = y + "px";
-  
-  function animate() {
-    x += vx; y += vy;
-    if (x < 0 || x > window.innerWidth) vx = -vx;
-    if (y < 0 || y > window.innerHeight) vy = -vy;
-    div.style.left = x + "px";
-    div.style.top = y + "px";
-    requestAnimationFrame(animate);
-  }
-  animate();
+function createFloatParticle(text){
+  const d=document.createElement("div");
+  d.className="particle";d.innerText=text;document.body.appendChild(d);
+  let x=Math.random()*innerWidth,y=Math.random()*innerHeight;
+  let vx=(Math.random()-0.5)*0.8,vy=(Math.random()-0.5)*0.8;
+  function a(){x+=vx;y+=vy;if(x<0||x>innerWidth)vx=-vx;if(y<0||y>innerHeight)vy=-vy;d.style.left=x+"px";d.style.top=y+"px";requestAnimationFrame(a);}
+  a();
 }
 </script>
 </body>
