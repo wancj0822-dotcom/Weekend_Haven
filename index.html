@@ -131,7 +131,6 @@ body {
   padding: 30px 25px;
   margin: 0 auto 30px;
   position: relative;
-  /* 新增精致细节：多层阴影+内发光+细边框 */
   box-shadow: 
     0 25px 60px rgba(0, 0, 0, 0.6), 
     inset 0 0 30px rgba(255,255,255,0.12),
@@ -189,7 +188,7 @@ body {
   z-index: 2;
 }
 
-/* 卡片按钮（新增返回主页） */
+/* 卡片按钮 */
 .card-buttons {
   display: flex;
   flex-direction: column;
@@ -209,12 +208,48 @@ body {
   transition: 0.3s;
   z-index: 2;
 }
-/* 返回主页按钮样式区分 */
 .card-btn.back-home {
   background: rgba(255,255,255,0.08);
 }
 .card-btn:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* 新增：语音收集模块 */
+.voice-section {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 16px;
+  background: rgba(20,20,30,0.8);
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+}
+.voice-title {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #ffd700;
+}
+.voice-tip {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.voice-record-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,204,0,0.5);
+  background: rgba(255,204,0,0.15);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.voice-record-btn:active {
+  background: rgba(255,204,0,0.3);
+  transform: scale(0.98);
 }
 
 /* 分享二维码弹窗 */
@@ -253,7 +288,7 @@ body {
   cursor: pointer;
 }
 
-/* 住户留言墙（上评论+下输入） */
+/* 住户留言墙 */
 .message-wall {
   max-width: var(--panel-max-width);
   margin: 5vh auto;
@@ -342,7 +377,7 @@ body {
 </head>
 <body>
 
-<!-- 1. 入口界面 -->
+<!-- 入口界面 -->
 <div class="entry-panel">
   <h1>周末收留所</h1>
   <p>输入你的昵称，领取专属门禁卡</p>
@@ -350,7 +385,7 @@ body {
   <button class="main-btn" onclick="generateCard()">领取门禁卡</button>
 </div>
 
-<!-- 2. 门禁卡弹窗（新增返回主页按钮） -->
+<!-- 门禁卡弹窗 + 新增语音模块 -->
 <div class="panel" id="cardModal">
   <div class="card-container">
     <div class="card" id="accessCard">
@@ -358,23 +393,40 @@ body {
       <div class="card-subtitle">住户·限定开放日</div>
       <div class="card-code" id="cardCode"></div>
     </div>
+
     <div class="card-buttons">
       <button class="card-btn back-home" onclick="backToHome()">返回主页</button>
       <button class="card-btn" onclick="openShareModal()">分享给朋友</button>
       <button class="card-btn" onclick="regenerateCard()">重新领取</button>
       <button class="card-btn" onclick="openMessageWall()">住户留言墙</button>
     </div>
+
+    <!-- 新增：声音收集模块 -->
+    <div class="voice-section">
+      <div class="voice-title">声音收集·一句话</div>
+      <div class="voice-tip">说出你想对主播/企划说的话，或喊出你爱的主播名字</div>
+      <button 
+        class="voice-record-btn" 
+        id="recordBtn"
+        onmousedown="startRecording()" 
+        onmouseup="stopRecording()"
+        ontouchstart="startRecording()"
+        ontouchend="stopRecording()"
+      >
+        开始录音
+      </button>
+    </div>
   </div>
 </div>
 
-<!-- 3. 分享二维码弹窗 -->
+<!-- 分享弹窗 -->
 <div class="share-modal" id="shareModal">
   <h3>扫码进入收留所</h3>
   <div id="shareQrcode"></div>
   <button class="close-share" onclick="closeShareModal()">关闭</button>
 </div>
 
-<!-- 4. 住户留言墙弹窗 -->
+<!-- 留言墙 -->
 <div class="panel" id="messageWallPanel">
   <div class="message-wall">
     <button class="back-btn" onclick="closeMessageWall()">返回卡片</button>
@@ -395,12 +447,15 @@ const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // 全局变量
 let currentNickname = "";
 let currentCardId = "";
-let fixedGradientIndex = 0; // 昵称绑定固定渐变
+let fixedGradientIndex = 0;
 window.allMessages = [];
-// 你的网站网址（Vercel 地址，扫码访问）
 const WEBSITE_URL = window.location.href;
 
-// 高级渐变配色
+// 录音全局变量
+let mediaRecorder = null;
+let audioChunks = [];
+
+// 渐变配色
 const gradients = [
   "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
@@ -414,7 +469,7 @@ const gradients = [
 
 window.onload = loadApprovedMessages;
 
-// 根据昵称生成固定渐变（同一昵称永远同色）
+// 固定渐变
 function getFixedGradientByNickname(nickname) {
   let hash = 0;
   for (let i = 0; i < nickname.length; i++) {
@@ -424,7 +479,7 @@ function getFixedGradientByNickname(nickname) {
   return gradients[fixedGradientIndex];
 }
 
-// 重新领取（随机更换渐变）
+// 重新领取
 function regenerateCard() {
   fixedGradientIndex = Math.floor(Math.random() * gradients.length);
   document.getElementById("accessCard").style.background = gradients[fixedGradientIndex];
@@ -440,121 +495,90 @@ async function generateCard() {
   currentNickname = nickname;
   currentCardId = Math.random().toString(36).substring(2, 12);
 
-  // 隐藏入口，显示卡片
   document.querySelector(".entry-panel").style.display = "none";
   document.getElementById("cardModal").style.display = "block";
   
-  // 赋值卡片信息
   document.getElementById("cardNickname").innerText = nickname;
   document.getElementById("cardCode").innerText = "编号：" + currentCardId;
-  // 固定渐变（昵称绑定）
   document.getElementById("accessCard").style.background = getFixedGradientByNickname(nickname);
 
-  // 保存到数据库
   try {
     await sbClient.from("access_cards").insert([{ qr_code: currentCardId, nickname: nickname }]);
   } catch (e) { console.log(e); }
 }
 
-// 新增：返回主页函数
+// 返回主页
 function backToHome() {
   document.getElementById("cardModal").style.display = "none";
   document.querySelector(".entry-panel").style.display = "block";
 }
 
-// 打开分享弹窗（显示二维码）
+// 分享弹窗
 function openShareModal() {
   document.getElementById("shareModal").style.display = "block";
-  // 生成二维码（内容为网站网址）
   document.getElementById("shareQrcode").innerHTML = "";
-  new QRCode(document.getElementById("shareQrcode"), {
-    text: WEBSITE_URL,
-    width: 160,
-    height: 160
-  });
+  new QRCode(document.getElementById("shareQrcode"), { text: WEBSITE_URL, width: 160, height: 160 });
 }
-// 关闭分享弹窗
 function closeShareModal() {
   document.getElementById("shareModal").style.display = "none";
 }
 
-// 打开留言墙
+// 留言墙
 function openMessageWall() {
   document.getElementById("cardModal").style.display = "none";
   document.getElementById("messageWallPanel").style.display = "block";
   renderMessageList();
 }
-// 关闭留言墙
 function closeMessageWall() {
   document.getElementById("messageWallPanel").style.display = "none";
   document.getElementById("cardModal").style.display = "block";
 }
 
-// 渲染留言列表
+// 渲染留言
 function renderMessageList() {
   const list = document.getElementById("messageList");
-  list.innerHTML = "";
-  if (window.allMessages.length === 0) {
-    list.innerHTML = "<p style='text-align:center;opacity:0.6;'>暂无留言，快来抢沙发吧</p>";
-    return;
-  }
-  window.allMessages.forEach(m => {
-    const time = new Date(m.created_at).toLocaleString("zh-CN");
-    const name = m.nickname || "匿名";
-    const item = document.createElement("div");
-    item.className = "message-item";
-    item.innerHTML = `
-      <div class="message-nickname">${name}</div>
-      <div class="message-content">${m.content}</div>
-      <div class="message-time">${time}</div>
-    `;
-    list.appendChild(item);
-  });
+  list.innerHTML = window.allMessages.length === 0 
+    ? "<p style='text-align:center;opacity:0.6;'>暂无留言，快来抢沙发吧</p>"
+    : window.allMessages.map(m => `
+      <div class="message-item">
+        <div class="message-nickname">${m.nickname || '匿名'}</div>
+        <div class="message-content">${m.content}</div>
+        <div class="message-time">${new Date(m.created_at).toLocaleString('zh-CN')}</div>
+      </div>
+    `).join('');
 }
 
-// 提交留言
+// 提交文字留言
 async function submitMessage() {
   const content = document.getElementById("userMsg").value.trim();
   if (!content) return alert("请输入留言内容");
-  
   try {
-    await sbClient.from("messages").insert([{
-      content: content,
-      nickname: currentNickname,
-      is_approved: false
-    }]);
-    alert("✅ 留言提交成功，审核后将展示在主页");
+    await sbClient.from("messages").insert([{ content, nickname: currentNickname, is_approved: false }]);
+    alert("✅ 留言提交成功，审核后展示");
     document.getElementById("userMsg").value = "";
-  } catch (e) {
-    alert("❌ 提交失败，请重试");
-  }
+  } catch (e) { alert("❌ 提交失败"); }
 }
 
-// 加载审核通过的留言（漂浮）
+// 加载漂浮留言
 async function loadApprovedMessages() {
   document.querySelectorAll(".particle").forEach(p => p.remove());
   const { data } = await sbClient.from("messages").select("*").eq("is_approved", true);
   if (data) {
     window.allMessages = data;
-    data.forEach(m => {
-      const name = m.nickname || "匿名";
-      createFloatParticle(`${name}：${m.content}`);
-    });
+    data.forEach(m => createFloatParticle(`${m.nickname || '匿名'}：${m.content}`));
   }
 }
 
-// 漂浮留言动画
+// 漂浮动画
 function createFloatParticle(text) {
   const div = document.createElement("div");
   div.className = "particle";
   div.innerText = text;
   document.body.appendChild(div);
-
   let x = Math.random() * (innerWidth - div.offsetWidth);
   let y = Math.random() * (innerHeight - div.offsetHeight);
   let vx = (Math.random() - 0.5) * 0.8;
   let vy = (Math.random() - 0.5) * 0.8;
-
   function animate() {
     x += vx; y += vy;
     if (x < 0 || x > innerWidth - div.offsetWidth) vx = -vx;
@@ -564,6 +588,52 @@ function createFloatParticle(text) {
     requestAnimationFrame(animate);
   }
   animate();
+}
+
+// ===================== 新增：语音录音核心代码 =====================
+// 开始录音（按住）
+async function startRecording() {
+  if (!currentNickname) return alert("请先领取门禁卡");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+    mediaRecorder.start();
+    document.getElementById("recordBtn").innerText = "正在录音...松开结束";
+  } catch (e) {
+    alert("❌ 录音失败，请允许麦克风权限");
+    console.error(e);
+  }
+}
+
+// 停止录音（松开）+ 上传后台
+async function stopRecording() {
+  if (!mediaRecorder || mediaRecorder.state === "inactive") return;
+  mediaRecorder.stop();
+  document.getElementById("recordBtn").innerText = "开始录音";
+
+  mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+    // 转为Base64上传后台
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = async () => {
+      const base64Audio = reader.result;
+      try {
+        // 上传至 voice_messages 表，仅后台可见
+        await sbClient.from("voice_messages").insert([{
+          nickname: currentNickname,
+          audio_base64: base64Audio,
+          created_at: new Date()
+        }]);
+        alert("✅ 语音留言提交成功！仅管理员可收听");
+      } catch (e) {
+        alert("❌ 语音上传失败");
+        console.error(e);
+      }
+    };
+  };
 }
 </script>
 </body>
