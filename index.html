@@ -590,7 +590,7 @@ function createFloatParticle(text) {
   animate();
 }
 
-// ===================== 新增：语音录音核心代码 =====================
+// ===================== 新增：语音录音核心代码【已修复】 =====================
 // 开始录音（按住）
 async function startRecording() {
   if (!currentNickname) return alert("请先领取门禁卡");
@@ -614,14 +614,13 @@ async function stopRecording() {
   document.getElementById("recordBtn").innerText = "开始录音";
 
   mediaRecorder.onstop = async () => {
-    const audioBlob = new Blob(audioChunks, { type: "audio/mpeg" });
-    // 转为Base64上传后台
+    // 关键修改：改用通用兼容的 webm 格式
+    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
     const reader = new FileReader();
     reader.readAsDataURL(audioBlob);
     reader.onloadend = async () => {
       const base64Audio = reader.result;
       try {
-        // 上传至 voice_messages 表，仅后台可见
         await sbClient.from("voice_messages").insert([{
           nickname: currentNickname,
           audio_base64: base64Audio,
