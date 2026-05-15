@@ -614,7 +614,7 @@ async function stopRecording() {
   document.getElementById("recordBtn").innerText = "开始录音";
 
   mediaRecorder.onstop = async () => {
-    const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+    const audioBlob = new Blob(audioChunks, { type: "audio/mpeg" });
     // 转为Base64上传后台
     const reader = new FileReader();
     reader.readAsDataURL(audioBlob);
